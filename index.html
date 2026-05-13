@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>תיק מוצר</title>
+
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial;background:#0b1220;color:#eaf0ff}
+    header{padding:16px;border-bottom:1px solid rgba(255,255,255,.12)}
+    h1{margin:0;font-size:20px}
+    p{margin:8px 0 0;color:#a8b3cf;line-height:1.5}
+
+    .actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border-radius:12px;
+         border:1px solid rgba(74,163,255,.65);background:rgba(74,163,255,.16);
+         color:#eaf0ff;text-decoration:none}
+
+    .wrap{padding:14px 16px;max-width:1100px;margin:0 auto}
+    h2{margin:18px 0 10px;font-size:16px}
+
+    /* Videos */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .card{background:rgba(17,26,46,.72);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px}
+    video{width:100%;border-radius:12px;background:#000}
+
+    /* Images */
+    .gallery{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    .thumb{
+      display:block;
+      text-decoration:none;
+      color:inherit;
+    }
+    .gallery img{
+      width:100%;
+      aspect-ratio: 4 / 3;
+      height:auto;
+      object-fit: contain;
+      background: rgba(255,255,255,.06);
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      padding:6px;
+      cursor:pointer;
+    }
+
+    footer{border-top:1px solid rgba(255,255,255,.12);padding:14px 16px;color:#a8b3cf;text-align:center;font-size:13px}
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1 id="productName">טוען…</h1>
+  <p id="productDescription"></p>
+
+  <div class="actions" id="docsBtnsWrap" style="display:none;">
+    <a id="drawingBtn" class="btn" target="_blank" rel="noopener noreferrer">📄 פתח שרטוט (PDF)</a>
+    <a id="wiringBtn" class="btn" target="_blank" rel="noopener noreferrer">🔌 פתח שרטוט חיווט (PDF)</a>
+  </div>
+
+  <!-- Actions: Report + Status -->
+  <div class="actions" id="opsBtnsWrap">
+    <a id="reportBtn" class="btn" target="_blank" rel="noopener noreferrer">📝 דיווח ביצוע</a>
+    <a id="statusBtn" class="btn" target="_blank" rel="noopener noreferrer">📊 סטטוס היום</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h2>וידאו</h2>
+  <div id="videos" class="grid"></div>
+
+  <h2>תמונות</h2>
+  <div id="images" class="gallery"></div>
+</div>
+
+<footer>צפייה בלבד • אין כפתורי הורדה</footer>
+
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const p = (params.get("p") || "product").trim();
+
+    const reportBtn = document.getElementById("reportBtn");
+    const statusBtn = document.getElementById("statusBtn");
+
+    if (reportBtn) reportBtn.href = `report.html?p=${encodeURIComponent(p)}`;
+    if (statusBtn) statusBtn.href = `status.html?p=${encodeURIComponent(p)}`;
+  })();
+</script>
+
+<script src="app.js"></script>
+</body>
+</html>
+``

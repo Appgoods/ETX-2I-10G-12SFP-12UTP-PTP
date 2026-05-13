@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>דיווח ביצוע</title>
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial;background:#0b1220;color:#eaf0ff}
+    .wrap{max-width:520px;margin:0 auto;padding:16px}
+    h1{font-size:18px;margin:10px 0}
+    label{display:block;margin:12px 0 6px;color:#a8b3cf}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#0f1a2e;color:#eaf0ff}
+    button{margin-top:14px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(74,163,255,.65);background:rgba(74,163,255,.16);color:#eaf0ff;font-weight:600}
+    .msg{margin-top:12px;color:#a8b3cf}
+    .ok{color:#7CFFB2}
+    .err{color:#FF8A8A}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#a8b3cf;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>דיווח ביצוע</h1>
+    <div id="prod" class="pill">מוצר: …</div>
+
+    <label>שם עובד</label>
+    <input id="worker" placeholder="לדוגמה: דוד" />
+
+    <label>כמה בוצע עכשיו?</label>
+    <input id="qty" type="number" min="0" step="1" placeholder="לדוגמה: 5" />
+
+    <button id="send">שלח</button>
+    <div id="msg" class="msg"></div>
+  </div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const productId = (params.get("p") || "product").trim();
+  document.getElementById("prod").textContent = "מוצר: " + productId;
+
+  const msg = document.getElementById("msg");
+  function setMsg(text, cls){
+    msg.className = "msg " + (cls||"");
+    msg.textContent = text;
+  }
+
+  document.getElementById("send").addEventListener("click", async () => {
+    const worker = document.getElementById("worker").value.trim();
+    const qty = parseInt(document.getElementById("qty").value, 10);
+
+    if (!worker) return setMsg("חסר שם עובד", "err");
+    if (!Number.isFinite(qty) || qty <= 0) return setMsg("כמות לא תקינה", "err");
+
+    setMsg("שולח…");
+
+    try {
+      const res = await fetch("/api/report", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          productId,
+          workerName: worker,
+          doneQty: qty,
+          date: new Date().toISOString().slice(0,10) // YYYY-MM-DD
+        })
+      });
+
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.message || ("HTTP " + res.status));
+
+      setMsg("✅ נשלח בהצלחה", "ok");
+      document.getElementById("qty").value = "";
+    } catch (e) {
+      setMsg("❌ שגיאה: " + e.message, "err");
+    }
+  });
+</script>
+</body>
+</html>
