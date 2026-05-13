@@ -1,7 +1,5 @@
 {
-  "name": "production-tracking",
-  "version": "1.0.0",
-  "dependencies": {
-    "@netlify/db": "^1.0.0"
-  }
+  "name": "etx-project",
+  "version": "1.0.0"
 }
+``
