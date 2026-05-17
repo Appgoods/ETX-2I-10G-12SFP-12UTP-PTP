@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Local Netlify folder
+.netlify
+
+# Node
+node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# (אופציונלי) אם אתה לא משתמש ב-Deno בפרויקט הזה
+deno.lock
