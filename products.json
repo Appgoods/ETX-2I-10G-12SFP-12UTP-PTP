@@ -7,7 +7,8 @@
                                ],
                     "images":  [
                                    "assets/images/1.jpg",
-                                   "assets/images/2.png"
+                                   "assets/images/2.png",
+                                   "assets/images/3.png"
                                ],
                     "name":  "ETX-2I-10G 12SFP-12UTP-PTP",
                     "drawingPdf":  "assets/docs/drawing.pdf"

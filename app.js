@@ -80,14 +80,101 @@ function renderVideos(videoUrls = []) {
   });
 }
 
-// ----- Images (NEW behavior) -----
-// תמונות מוצגות "נורמלי" (CSS), ולחיצה פותחת את הקובץ בטאב חדש
+// ===== Lightbox helpers =====
+function setupLightboxForGallery() {
+  const gallery = $("images");
+  const lb = $("lightbox");
+  const lbImg = $("lightboxImg");
+  const lbCap = $("lightboxCaption");
+  if (!gallery || !lb || !lbImg || !lbCap) return;
+
+  const btnClose = lb.querySelector(".lightbox__close");
+  const btnPrev = lb.querySelector(".lightbox__prev");
+  const btnNext = lb.querySelector(".lightbox__next");
+  const backdrop = lb.querySelector(".lightbox__backdrop");
+
+  let items = [];
+  let index = 0;
+  let lastFocus = null;
+
+  function collectItems() {
+    const imgs = Array.from(gallery.querySelectorAll("img"));
+    items = imgs.map((img) => ({
+      src: img.getAttribute("data-full") || img.src,
+      caption: img.alt || img.getAttribute("data-caption") || ""
+    }));
+  }
+
+  function render() {
+    if (!items.length) return;
+    const item = items[index];
+    lbImg.src = item.src;
+    lbImg.alt = item.caption || "תמונה";
+    lbCap.textContent = item.caption || "";
+    if (btnPrev) btnPrev.disabled = (index <= 0);
+    if (btnNext) btnNext.disabled = (index >= items.length - 1);
+  }
+
+  function openAt(i) {
+    collectItems();
+    if (!items.length) return;
+
+    index = Math.max(0, Math.min(i, items.length - 1));
+    lastFocus = document.activeElement;
+
+    lb.classList.add("is-open");
+    lb.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    render();
+
+    if (btnClose) btnClose.focus();
+  }
+
+  function close() {
+    lb.classList.remove("is-open");
+    lb.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    lbImg.src = "";
+    lbCap.textContent = "";
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+
+  function prev() {
+    if (index > 0) { index--; render(); }
+  }
+
+  function next() {
+    if (index < items.length - 1) { index++; render(); }
+  }
+
+  gallery.addEventListener("click", (e) => {
+    const img = e.target.closest("img");
+    if (!img) return;
+    e.preventDefault();
+    const imgs = Array.from(gallery.querySelectorAll("img"));
+    openAt(imgs.indexOf(img));
+  });
+
+  if (btnClose) btnClose.addEventListener("click", close);
+  if (backdrop) backdrop.addEventListener("click", close);
+  if (btnPrev) btnPrev.addEventListener("click", prev);
+  if (btnNext) btnNext.addEventListener("click", next);
+
+  document.addEventListener("keydown", (e) => {
+    if (!lb.classList.contains("is-open")) return;
+    if (e.key === "Escape") return close();
+    // RTL: שמאל=הבא, ימין=הקודם
+    if (e.key === "ArrowLeft") return next();
+    if (e.key === "ArrowRight") return prev();
+  });
+}
+
+// ----- Images (UPDATED: Lightbox, no new tab) -----
 function renderImages(imageUrls = []) {
   const container = $("images");
   if (!container) return;
 
   container.innerHTML = "";
-
   const images = (imageUrls || []).map(cleanPath);
 
   if (!images.length) {
@@ -96,19 +183,17 @@ function renderImages(imageUrls = []) {
   }
 
   images.forEach((src) => {
-    const a = document.createElement("a");
-    a.className = "thumb";
-    a.href = src;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
+    const wrapper = document.createElement("div");
+    wrapper.className = "thumb";
+    wrapper.style.cursor = "pointer";
 
     const img = document.createElement("img");
     img.src = src;
     img.alt = "תמונה";
     img.loading = "lazy";
 
-    a.appendChild(img);
-    container.appendChild(a);
+    wrapper.appendChild(img);
+    container.appendChild(wrapper);
   });
 }
 
@@ -124,7 +209,6 @@ async function main() {
     const keys = Object.keys(data || {});
     if (!keys.length) throw new Error("products.json is empty");
 
-    // אם יש ?p= והוא קיים – נשתמש בו, אחרת נשתמש במוצר הראשון בקובץ
     const productId = (queryId && data[queryId]) ? queryId : keys[0];
     const product = data[productId];
 
@@ -134,6 +218,8 @@ async function main() {
     setupDocButtons(product);
     renderVideos(product.videos || []);
     renderImages(product.images || []);
+
+    setupLightboxForGallery();
   } catch (err) {
     console.error(err);
     $("productName").textContent = "❌ שגיאה";

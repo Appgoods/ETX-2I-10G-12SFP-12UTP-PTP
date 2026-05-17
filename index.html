@@ -48,6 +48,103 @@
     }
 
     footer{border-top:1px solid rgba(255,255,255,.12);padding:14px 16px;color:#a8b3cf;text-align:center;font-size:13px}
+
+    /* ===== Lightbox ===== */
+    .lightbox{
+      position:fixed; inset:0;
+      display:none;
+      z-index:9999;
+
+      /* חשוב: כשהלייטבוקס סגור הוא לא חוסם קליקים/גלילה */
+      pointer-events:none;
+    }
+    .lightbox.is-open{
+      display:block;
+      pointer-events:auto;
+    }
+
+    .lightbox__backdrop{
+      position:absolute; inset:0;
+      background:rgba(0,0,0,.72);
+    }
+
+    .lightbox__panel{
+      position:absolute;
+      inset: 24px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+
+      max-width: 1200px;
+      margin:auto;
+
+      background: rgba(17,26,46,.88);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;
+      padding:14px;
+      backdrop-filter: blur(6px);
+    }
+
+    .lightbox__img{
+      max-width:100%;
+      max-height: calc(100vh - 170px);
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:#000;
+      object-fit: contain;
+    }
+
+    .lightbox__caption{
+      width:100%;
+      color:#a8b3cf;
+      font-size:13px;
+      text-align:center;
+      word-break: break-word;
+    }
+
+    .lightbox__close{
+      position:absolute;
+      top:10px;
+      left:10px; /* RTL: נוח לשים סגירה בצד שמאל */
+      width:38px; height:38px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color:#eaf0ff;
+      font-size:18px;
+      cursor:pointer;
+    }
+
+    .lightbox__nav{
+      position:absolute;
+      top:50%;
+      transform: translateY(-50%);
+      width:44px; height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color:#eaf0ff;
+      font-size:28px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .lightbox__prev{ right:12px; }  /* RTL: קודם בצד ימין */
+    .lightbox__next{ left:12px; }   /* RTL: הבא בצד שמאל */
+
+    .lightbox__nav:disabled{
+      opacity:.35;
+      cursor:not-allowed;
+    }
+
+    @media (max-width: 600px){
+      .lightbox__panel{ inset: 12px; }
+      .lightbox__img{ max-height: calc(100vh - 190px); }
+    }
   </style>
 </head>
 
@@ -79,14 +176,33 @@
 
 <footer>צפייה בלבד • אין כפתורי הורדה</footer>
 
+<!-- Lightbox (Image Viewer) -->
+<div id="lightbox" class="lightbox" aria-hidden="true">
+  <div class="lightbox__backdrop"></div>
+
+  <div class="lightbox__panel" role="dialog" aria-modal="true" aria-label="תצוגת תמונה">
+    <button class="lightbox__close" type="button" aria-label="סגירה" title="סגירה (Esc)">✕</button>
+
+    <button class="lightbox__nav lightbox__prev" type="button" aria-label="הקודם" title="קודם (→)">‹</button>
+    <button class="lightbox__nav lightbox__next" type="button" aria-label="הבא" title="הבא (←)">›</button>
+
+    <img id="lightboxImg" class="lightbox__img" alt="" />
+    <div id="lightboxCaption" class="lightbox__caption"></div>
+  </div>
+</div>
+
 <script>
   (function () {
+    const DEFAULT_PRODUCT = "ETX-2I-10G 12SFP-12UTP-PTP";
     const params = new URLSearchParams(window.location.search);
-    const p = (params.get("p") || "product").trim();
+
+    // אם אין ?p= נשתמש בברירת מחדל
+    const p = (params.get("p") || DEFAULT_PRODUCT).trim();
 
     const reportBtn = document.getElementById("reportBtn");
     const statusBtn = document.getElementById("statusBtn");
 
+    // מייצר לינקים תקינים עם קידוד לרווחים/תווים מיוחדים
     if (reportBtn) reportBtn.href = `report.html?p=${encodeURIComponent(p)}`;
     if (statusBtn) statusBtn.href = `status.html?p=${encodeURIComponent(p)}`;
   })();
@@ -95,4 +211,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-``

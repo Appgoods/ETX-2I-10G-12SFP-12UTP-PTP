@@ -31,12 +31,22 @@
 
     <button id="send">שלח</button>
     <div id="msg" class="msg"></div>
-    <div class="hint">טיפ: אם יש שגיאה, יוצג כאן גם ה‑Response המלא מהשרת (כדי שנדע בדיוק מה לתקן).</div>
+    <div class="hint">טיפ: אם יש שגיאה, יוצג כאן גם ה‑Response המלא (כדי שנדע בדיוק מה לתקן).</div>
   </div>
 
 <script>
+  // ✅ 1) Project URL
+  const SUPABASE_URL = "https://lnhruihjqefatcicfdeo.supabase.co";
+
+  // ✅ 2) Publishable (anon) key – בסדר לשימוש בצד לקוח
+  const SUPABASE_ANON_KEY = "sb_publishable_0r590ZTtfde-eYBMgPpP2Q_euXd7xeX";
+
   const params = new URLSearchParams(location.search);
-  const productId = (params.get("p") || "product").trim();
+
+  // ✅ ברירת מחדל נכונה במקום "product"
+  const DEFAULT_PRODUCT = "ETX-2I-10G 12SFP-12UTP-PTP";
+  const productId = decodeURIComponent((params.get("p") || DEFAULT_PRODUCT)).trim();
+
   document.getElementById("prod").textContent = "מוצר: " + productId;
 
   const msg = document.getElementById("msg");
@@ -46,7 +56,6 @@
   }
 
   async function readResponseBody(res) {
-    // קורא את גוף התשובה בצורה חסינה: קודם text, ואז מנסה parse ל-JSON
     const raw = await res.text();
     try {
       const json = JSON.parse(raw);
@@ -63,24 +72,37 @@
     if (!worker) return setMsg("חסר שם עובד", "err");
     if (!Number.isFinite(qty) || qty <= 0) return setMsg("כמות לא תקינה", "err");
 
+    if (!SUPABASE_URL || !SUPABASE_URL.startsWith("http")) {
+      return setMsg("SUPABASE_URL לא תקין", "err");
+    }
+    if (!SUPABASE_ANON_KEY) {
+      return setMsg("חסר ANON/PUBLISHABLE KEY (Project Settings → API)", "err");
+    }
+
     setMsg("שולח…");
 
+    const row = {
+      product_id: productId,
+      worker_name: worker,
+      done_qty: qty,
+      date_key: new Date().toISOString().slice(0,10) // YYYY-MM-DD
+    };
+
     try {
-      const res = await fetch("/api/report", {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/production_log`, {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          productId,
-          workerName: worker,
-          doneQty: qty,
-          date: new Date().toISOString().slice(0,10) // YYYY-MM-DD
-        })
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify(row)
       });
 
       const body = await readResponseBody(res);
 
       if (!res.ok) {
-        // מציג את השגיאה האמיתית + הגוף
         const msgFromJson = body.json?.message || body.json?.error || body.json?.details || null;
         const nice = [
           `❌ שגיאה (HTTP ${res.status})`,
