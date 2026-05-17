@@ -11,10 +11,11 @@
     label{display:block;margin:12px 0 6px;color:#a8b3cf}
     input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#0f1a2e;color:#eaf0ff}
     button{margin-top:14px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(74,163,255,.65);background:rgba(74,163,255,.16);color:#eaf0ff;font-weight:600}
-    .msg{margin-top:12px;color:#a8b3cf}
+    .msg{margin-top:12px;color:#a8b3cf;white-space:pre-wrap;word-break:break-word}
     .ok{color:#7CFFB2}
     .err{color:#FF8A8A}
     .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#a8b3cf;font-size:12px}
+    .hint{margin-top:8px;color:#a8b3cf;font-size:12px}
   </style>
 </head>
 <body>
@@ -30,6 +31,7 @@
 
     <button id="send">שלח</button>
     <div id="msg" class="msg"></div>
+    <div class="hint">טיפ: אם יש שגיאה, יוצג כאן גם ה‑Response המלא מהשרת (כדי שנדע בדיוק מה לתקן).</div>
   </div>
 
 <script>
@@ -41,6 +43,17 @@
   function setMsg(text, cls){
     msg.className = "msg " + (cls||"");
     msg.textContent = text;
+  }
+
+  async function readResponseBody(res) {
+    // קורא את גוף התשובה בצורה חסינה: קודם text, ואז מנסה parse ל-JSON
+    const raw = await res.text();
+    try {
+      const json = JSON.parse(raw);
+      return { raw, json };
+    } catch {
+      return { raw, json: null };
+    }
   }
 
   document.getElementById("send").addEventListener("click", async () => {
@@ -64,13 +77,24 @@
         })
       });
 
-      const data = await res.json().catch(()=>({}));
-      if (!res.ok) throw new Error(data.message || ("HTTP " + res.status));
+      const body = await readResponseBody(res);
+
+      if (!res.ok) {
+        // מציג את השגיאה האמיתית + הגוף
+        const msgFromJson = body.json?.message || body.json?.error || body.json?.details || null;
+        const nice = [
+          `❌ שגיאה (HTTP ${res.status})`,
+          msgFromJson ? `Message: ${msgFromJson}` : null,
+          `Response body:`,
+          body.raw || "(empty)"
+        ].filter(Boolean).join("\n");
+        throw new Error(nice);
+      }
 
       setMsg("✅ נשלח בהצלחה", "ok");
       document.getElementById("qty").value = "";
     } catch (e) {
-      setMsg("❌ שגיאה: " + e.message, "err");
+      setMsg(String(e.message || e), "err");
     }
   });
 </script>
